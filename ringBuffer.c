@@ -3,14 +3,15 @@
  *  created by Trace Baxter 07/03/18
  *  Copyright © 2018 ParkHub. All rights reserved.
 */
-#include "Buffer.h"
+#include "ringBuffer.h"
 
 // Initialize buffer
-buffer_t rb_init(size_t length, size_t size) {
+// ***************LENGTH MUST BE A POWER OF 2*********************
+buffer_t rb_init(size_t length, size_t stride) {
   buffer_t cbuf;
-  cbuf.size = size;
+  cbuf.stride = stride;
   cbuf.length = length;
-  cbuf.buffer = (int16_t **)malloc(length * size * sizeof(int16_t));
+  cbuf.buffer = (int16_t *)malloc(length * stride * sizeof(int16_t));
   rb_reset(&cbuf);
   return cbuf;
 }
@@ -31,38 +32,45 @@ void rb_destroy(buffer_t *cbuf) {
 void rb_put(buffer_t *cbuf, int16_t *data) {
   if (cbuf->empty) cbuf->empty = 0;
   else if (cbuf->tail == cbuf->head) {
-    cbuf->tail = (cbuf->tail + 1) % cbuf->length;
+    cbuf->tail = (cbuf->tail + 1) & (cbuf->length - 1);
   }
 
-  cbuf->buffer[cbuf->head] = data;
-  cbuf->head = (cbuf->head + 1) % cbuf->length;
+  int index = cbuf->head * cbuf->stride;
+  for (int i = 0; i < cbuf->stride; i++) {
+    cbuf->buffer[index + i] = data[i];
+  }
+
+  cbuf->head = (cbuf->head + 1) & (cbuf->length - 1);
 }
 
 // Assign data to given variable and advance tail pointer
 int rb_get(buffer_t *cbuf, int16_t *data) {
   if (cbuf->empty) return -1;
 
-  *data = *cbuf->buffer[cbuf->tail];
+  int index = cbuf->tail * cbuf->stride;
+  for (int i = 0; i < cbuf->stride; i++) {
+    data[i] = cbuf->buffer[index + i];
+  }
 
   if (cbuf->tail == cbuf->head)
     rb_reset(cbuf);
   else
-    cbuf->tail = (cbuf->tail + 1) % cbuf->length;
+    cbuf->tail = (cbuf->tail + 1) & (cbuf->length - 1);
 
   return 0;
 }
 
 // Get the next n values or as many as you can, if less than n are left return the number fetched
-int rb_getn(buffer_t *cbuf, int16_t **data, int n) {
+int rb_getn(buffer_t *cbuf, int16_t *data, int n) {
   if (cbuf->empty) return -1;
 
   if (n > 0) {
     for (int i = 0; i < n; i++) {
-      int res = rb_get(cbuf, &data[i]);
+      int res = rb_get(cbuf, &data[i * cbuf->stride]);
 
-      printf("%d, %d, %s\n", cbuf->head, cbuf->tail, data[i]);
+      // If you have emptied the buffer return with the number of elements retrieved
       if (res == -1)
-        return i;
+        return i - 1;
     }
   }
   return 0;
@@ -72,20 +80,26 @@ int rb_getn(buffer_t *cbuf, int16_t **data, int n) {
 int rb_peek(buffer_t *cbuf, int16_t *data) {
   if (cbuf->empty) return -1;
 
-  data = cbuf->buffer[cbuf->tail];
+  int index = cbuf->tail * cbuf->stride;
+  for (int i = 0; i < cbuf->stride; i++) {
+    data[i] = cbuf->buffer[index + i];
+  }
   return 0;
 }
 
 // Look n elements in the future, if rerturn is above 0 that is the number of elements peeked
-int rb_peekn(buffer_t *cbuf, int16_t **data, int n){
+int rb_peekn(buffer_t *cbuf, int16_t *data, int n){
   if (cbuf->empty) return -1;
 
   if (n > 0) {
     for (int i = 0; i < n; i++) {
-      int storageIndex = (cbuf->tail + i) % cbuf->length;
-      data[i] = cbuf->buffer[storageIndex];
+      int index = (cbuf->tail + i) * cbuf->stride;
 
-      if(storageIndex == cbuf->head) return i;
+      for (int j = 0; j < cbuf->stride; j++) {
+        data[(cbuf->stride * i) + j] = cbuf->buffer[index + j];
+      }
+
+      if((cbuf->tail + i) == cbuf->head) return i;
     }
   }
 

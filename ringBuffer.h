@@ -11,6 +11,8 @@
  //
 
  // Call initialize to allocate buffer's memory and get the buffer
+
+// ***************FIRST ARGUMENT MUST BE A POWER OF 2*********************
  buffer_t buffer = rb_init(32,12);
 
  // Create some readings
@@ -50,11 +52,11 @@
 #include <stdlib.h>
 
 typedef struct {
-  int16_t **buffer;
+  int16_t *buffer;
   size_t head;
   size_t tail;
   size_t length;
-  size_t size;
+  size_t stride;
   size_t empty;
 } buffer_t;
 
@@ -99,10 +101,10 @@ int rb_get(buffer_t *cbuf, int16_t *data);
  * @param n - the number of elements to grab
  * return is -1 for failed(empty buffer) 0 for success and >0 for the number of elements grabbed before emptying buffer
 */
-int rb_getn(buffer_t *cbuf, int16_t **data, int n);
+int rb_getn(buffer_t *cbuf, int16_t *data, int n);
 
 /**
  * peek and peekn are the same as get and getn but do not move read pointer
 */
 int rb_peek(buffer_t *cbuf, int16_t *data);
-int rb_peekn(buffer_t *cbuf, int16_t **data, int n);
+int rb_peekn(buffer_t *cbuf, int16_t *data, int n);
