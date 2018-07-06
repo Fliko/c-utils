@@ -6,43 +6,7 @@
 */
 
 /**
- //
- // EXAMPLE USAGE
- //
-
- // Call initialize to allocate buffer's memory and get the buffer
-
-// ***************FIRST ARGUMENT MUST BE A POWER OF 2*********************
- buffer_t buffer = rb_init(32,12);
-
- // Create some readings
- int16_t readingsA[12] = { -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5 };
- int16_t readingsB[12] = { -2, -5, -2, -3, -2, -2, 0, 2, 2, 2, 4, 2 };
-
- // Add to buffer
- rb_put(&buffer, &readingsA);
- rb_put(&buffer, &readingsB);
-
- // Read from buffer
- int16_t readingAPopped[12];
- int resultA = rb_get(&buffer, &readingAPopped);
-
- // Push a bunch of readings
- rb_put(&buffer, &readingsA);
- rb_put(&buffer, &readingsA);
- rb_put(&buffer, &readingsB);
- rb_put(&buffer, &readingsB);
-
- // Pop (or peek) multiple at the same time
- int16_t readingBPopped[15][12];
- int resultB = rb_getn(&buffer, &readingBPopped, 15);
-
- // Do something with each reading
- for (int i = 0; i < 15; i++) {
- // readingBPopped[i] ...
- }
-
- rb_destroy();
+ * See test/ringbuffer.c for example usage
  */
 #ifndef RING_BUFFER_H
 #define RING_BUFFER_H
